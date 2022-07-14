@@ -21,6 +21,3 @@ def ce_loss(pred, target):
     """
     criterion = nn.BCELoss(reduction='sum')
     return criterion(pred, target) / (pred.shape[0] * 46.0 * 46.0)
-
-
-

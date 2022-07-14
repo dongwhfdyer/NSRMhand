@@ -52,7 +52,7 @@ class Stage1(nn.Module):
         :return: x              4D Tensor   batch size * 21  * 46 * 46
         """
         x = self.relu(self.stage1_1(x))  # batch size * 512 * 46 * 46
-        x = self.stage1_2(x)             # batch size * 21 * 46 * 46
+        x = self.stage1_2(x)  # batch size * 21 * 46 * 46
         return x
 
 
@@ -77,8 +77,8 @@ class VGG19(nn.Module):
 class CPMHand(nn.Module):
     def __init__(self, outc, pretrained=False):
         super(CPMHand, self).__init__()
-        self.outc = outc                       # 21
-        self.vgg19 = VGG19(pretrained=pretrained)                    # backbone
+        self.outc = outc  # 21
+        self.vgg19 = VGG19(pretrained=pretrained)  # backbone
         self.stage1 = Stage1(128, self.outc)
         self.stage2 = Stage(self.outc + 128, self.outc)
         self.stage3 = Stage(self.outc + 128, self.outc)
@@ -92,10 +92,10 @@ class CPMHand(nn.Module):
         :return: 
         """
         # ************* backbone *************
-        features = self.vgg19(image)        # batch size * 128 * 46 * 46
+        features = self.vgg19(image)  # batch size * 128 * 46 * 46
 
         # ************* CM stage *************
-        stage1 = self.stage1(features)   # batch size * 21 * 46 * 46
+        stage1 = self.stage1(features)  # batch size * 21 * 46 * 46
         stage2 = self.stage2(torch.cat([features, stage1], dim=1))
         stage3 = self.stage3(torch.cat([features, stage2], dim=1))
         stage4 = self.stage4(torch.cat([features, stage3], dim=1))
@@ -111,7 +111,5 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         x = x.cuda()
         net = net.cuda()
-    y = net(x)            # (2, 6, 21, 46, 46)
+    y = net(x)  # (2, 6, 21, 46, 46)
     print(y.shape)
-
-

@@ -37,11 +37,11 @@ class CMUHandDataset(Dataset):
 
         image = transforms.ToTensor()(im)
         image = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                   std=[0.229, 0.224, 0.225])(image)
+                                     std=[0.229, 0.224, 0.225])(image)
 
         # ******************** get label map **********************
-        img_label = self.all_labels[img_name]       # 21 * 2
-        label = np.asarray(img_label)   # 21 * 2
+        img_label = self.all_labels[img_name]  # 21 * 2
+        label = np.asarray(img_label)  # 21 * 2
         label[:, 0] = label[:, 0] * self.img_size / self.stride / w
         label[:, 1] = label[:, 1] * self.img_size / self.stride / h
 
@@ -52,12 +52,12 @@ class CMUHandDataset(Dataset):
     def gen_label_heatmap(self, label):
         label = torch.Tensor(label)
 
-        grid = torch.zeros((self.label_size, self.label_size, 2))       # size:(46,46,2)
+        grid = torch.zeros((self.label_size, self.label_size, 2))  # size:(46,46,2)
         grid[..., 0] = torch.Tensor(range(self.label_size)).unsqueeze(0)
         grid[..., 1] = torch.Tensor(range(self.label_size)).unsqueeze(1)
         grid = grid.unsqueeze(0)
         labels = label.unsqueeze(-2).unsqueeze(-2)
-        exponent = torch.sum((grid - labels)**2, dim=-1)    # size:(21,46,46)
+        exponent = torch.sum((grid - labels) ** 2, dim=-1)  # size:(21,46,46)
         heatmaps = torch.exp(-exponent / 2.0 / self.sigma / self.sigma)
         return heatmaps
 
@@ -80,5 +80,3 @@ if __name__ == "__main__":
     img = transforms.ToPILImage()(image)
     print(img.size)
     imageio.imwrite('img/img.jpg', img)
-
-

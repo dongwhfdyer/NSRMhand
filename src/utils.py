@@ -42,7 +42,7 @@ def get_pred_coordinates(pred_map, name, w, h, all_pred_labels):
     for b in range(pred_map.shape[0]):  # for image in one batch
         label_list = []
         for k in range(21):
-            tmp_pre = np.asarray(pred_map[b, k, :, :])   # 2D array  size:(46,46)
+            tmp_pre = np.asarray(pred_map[b, k, :, :])  # 2D array  size:(46,46)
             corr = np.where(tmp_pre == np.max(tmp_pre))  # coordinate of keypoints in 46 * 46 scale
 
             # get coordinate of keypoints in origin image scale
@@ -68,13 +68,13 @@ def get_pck_with_sigma(predict_labels_dict, gt_labels, sigma_list):
     """
     pck_dict = {}
     for im in predict_labels_dict:
-        gt_label = gt_labels[im]        # list    len:21      element:[x, y]
+        gt_label = gt_labels[im]  # list    len:21      element:[x, y]
         pred_label = predict_labels_dict[im]['pred_label']  # list    len:21      element:[x, y]
         im_size = predict_labels_dict[im]['resol']
         for sigma in sigma_list:
             if sigma not in pck_dict:
                 pck_dict[sigma] = []
-            pck_dict[sigma].append(PCK(pred_label, gt_label, im_size/2.2, sigma))
+            pck_dict[sigma].append(PCK(pred_label, gt_label, im_size / 2.2, sigma))
             # Attention!
             # since our cropped image is 2.2 times of hand tightest bounding box,
             # we simply use im_size / 2,2 as the tightest bounding box
@@ -124,7 +124,7 @@ def save_images(label_map, predict_heatmaps, epoch, img_name, save_dir):
         for i in range(21):
             pre += predict_heatmaps[b, i, :, :].detach().numpy()
             gth += label_map[b, i, :, :].numpy()
-        output[0:46,  0:46] = gth
+        output[0:46, 0:46] = gth
         output[50:96, 0: 46] = pre
         plt.imsave(epoch_save_dir + '/kp_' + name, output)
 
@@ -148,7 +148,6 @@ def save_limb_images(label_map, predict_heatmaps, epoch, img_name, save_dir):
         for i in range(label_map.shape[1]):
             pre += predict_heatmaps[b, i, :, :].detach().numpy()
             gth += label_map[b, i, :, :].numpy()
-        output[0:46,  0:46] = gth
+        output[0:46, 0:46] = gth
         output[50:96, 0: 46] = pre
         plt.imsave(epoch_save_dir + '/limb_' + name, output)
-

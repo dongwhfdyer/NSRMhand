@@ -1,5 +1,6 @@
 import sys
 import os
+
 currentUrl = os.path.dirname(__file__)
 parentUrl = os.path.abspath(os.path.join(currentUrl, os.pardir))
 sys.path.append(parentUrl)
@@ -28,12 +29,11 @@ test_pck_dir = 'predict_test/'
 make_dir(save_dir)
 make_dir(test_pck_dir)
 
-
 learning_rate = 1e-4
 lr_decay_epoch = 40
 batch_size = 32
 epochs = 45
-target_sigma_list = [ 0.04, 0.06, 0.08, 0.1, 0.12]
+target_sigma_list = [0.04, 0.06, 0.08, 0.1, 0.12]
 select_sigma = 0.1
 
 # multi-GPU
@@ -59,9 +59,9 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(valid_data, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
-
 # ******************** data preparation  ********************
 optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+
 
 def sum_mse_loss(pred, target):
     """
@@ -96,7 +96,7 @@ def train():
                 img = img.cuda()
                 label = label.cuda()
             optimizer.zero_grad()
-            pred_maps = model(img)   # (FloatTensor.cuda) size:(bz,6,21,46,46)
+            pred_maps = model(img)  # (FloatTensor.cuda) size:(bz,6,21,46,46)
             loss = sum_mse_loss(pred_maps, label)  # total loss
 
             loss.backward()
@@ -115,7 +115,7 @@ def train():
         # eval model after one epoch
         eval_loss, cur_pck = eval(epoch, mode='valid')
         print('EPOCH {}  Valid PCK {}'.format(epoch, cur_pck))
-        print('EPOCH {} TRAIN_LOSS {}'.format(epoch, sum(train_loss)/len(train_loss)))
+        print('EPOCH {} TRAIN_LOSS {}'.format(epoch, sum(train_loss) / len(train_loss)))
         print('EPOCH {} VALID_LOSS {}'.format(epoch, eval_loss))
 
         if cur_pck > max_pck:
@@ -142,7 +142,7 @@ def eval(epoch, mode='valid'):
         gt_labels = test_data.all_labels
 
     with torch.no_grad():
-        all_pred_labels = {}        # save predict results
+        all_pred_labels = {}  # save predict results
         eval_loss = []
         model.eval()
         for step, (img, label, img_name, w, h) in enumerate(loader):
@@ -150,7 +150,7 @@ def eval(epoch, mode='valid'):
                 img = img.cuda()
             pred_maps = model(img)  # output 5D tensor:   bz * 6 * 21 * 46 * 46
             all_pred_labels = get_pred_coordinates(pred_maps[:, -1, ...].cpu(),
-                                                      img_name, w, h, all_pred_labels)
+                                                   img_name, w, h, all_pred_labels)
 
             loss_final = sum_mse_loss(pred_maps[:, -1, ...].cpu(), label)
             eval_loss.append(loss_final)
@@ -172,7 +172,7 @@ def eval(epoch, mode='valid'):
         json.dump(pck_dict, open(pck_save_dir, 'w'), sort_keys=True, indent=4)
 
         select_pck = pck_dict[select_sigma]
-        eval_loss = sum(eval_loss)/len(eval_loss)
+        eval_loss = sum(eval_loss) / len(eval_loss)
     return eval_loss, select_pck
 
 
@@ -182,5 +182,3 @@ print('TESTING ============================>')
 state_dict = torch.load(os.path.join(save_dir, 'best_model.pth'))
 model.load_state_dict(state_dict)
 eval(0, mode='test')
-
-

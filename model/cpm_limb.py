@@ -52,7 +52,7 @@ class Stage1(nn.Module):
         :return: x              4D Tensor   batch size * 21  * 46 * 46
         """
         x = self.relu(self.stage1_1(x))  # batch size * 512 * 46 * 46
-        x = self.stage1_2(x)             # batch size * 21 * 46 * 46
+        x = self.stage1_2(x)  # batch size * 21 * 46 * 46
         return x
 
 
@@ -77,10 +77,10 @@ class VGG19(nn.Module):
 class CPMHandLimb(nn.Module):
     def __init__(self, outc=21, lshc=20, pretrained=False):
         super(CPMHandLimb, self).__init__()
-        self.outc = outc                       # 21
-        self.lsh_c = lshc                      # 20
+        self.outc = outc  # 21
+        self.lsh_c = lshc  # 20
 
-        self.vgg19 = VGG19(pretrained=pretrained)                    # backbone
+        self.vgg19 = VGG19(pretrained=pretrained)  # backbone
 
         # ************* Limb Segment stage *************
         self.stage1 = Stage1(128, self.lsh_c)
@@ -98,10 +98,10 @@ class CPMHandLimb(nn.Module):
         :return:
         """
         # ************* backbone *************
-        features = self.vgg19(image)        # size:(B,C,46,46)
+        features = self.vgg19(image)  # size:(B,C,46,46)
 
         # ************* Limb Segment stage *************
-        stage1 = self.stage1(features)                              # size:(B,C,46,46)
+        stage1 = self.stage1(features)  # size:(B,C,46,46)
         stage2 = self.stage2(torch.cat([features, stage1], dim=1))  # size:(B,C,46,46)
         stage3 = self.stage3(torch.cat([features, stage2], dim=1))  # size:(B,C,46,46)
 
@@ -110,8 +110,8 @@ class CPMHandLimb(nn.Module):
         stage5 = self.stage5(torch.cat([features, stage3, stage4], dim=1))
         stage6 = self.stage6(torch.cat([features, stage3, stage5], dim=1))
 
-        limb_maps = torch.stack([stage1, stage2, stage3], dim=1)    # size:(B,3,C,46,46)
-        conf_maps = torch.stack([stage4, stage5, stage6], dim=1)    # size:(B,3,21,46,46)
+        limb_maps = torch.stack([stage1, stage2, stage3], dim=1)  # size:(B,3,C,46,46)
+        conf_maps = torch.stack([stage4, stage5, stage6], dim=1)  # size:(B,3,21,46,46)
 
         # Add sigmoid for limb
         return limb_maps.sigmoid(), conf_maps
@@ -121,9 +121,6 @@ if __name__ == "__main__":
     net = CPMHandLimb(outc=21, lshc=6)
     x = torch.randn(2, 3, 368, 368)
 
-    y1,y2 = net(x)            # (2, 6, 21, 46, 46)
+    y1, y2 = net(x)  # (2, 6, 21, 46, 46)
     print(y1.shape)
     print(y2.shape)
-
-
-

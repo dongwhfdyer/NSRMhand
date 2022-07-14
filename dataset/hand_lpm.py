@@ -7,7 +7,6 @@ import json
 from PIL import Image
 import matplotlib.pyplot as plt
 
-
 parts = [
     [0, 1], [1, 2], [2, 3], [3, 4],
     [0, 5], [5, 6], [6, 7], [7, 8],
@@ -15,7 +14,6 @@ parts = [
     [0, 13], [13, 14], [14, 15], [15, 16],
     [0, 17], [17, 18], [18, 19], [19, 20]
 ]
-
 
 groups6 = [
     [1, 2, 3], [5, 6, 7], [9, 10, 11], [13, 14, 15], [17, 18, 19], [0, 4, 8, 12, 16],
@@ -89,13 +87,13 @@ class HandDataset_LPM(Dataset):
     def gen_label_heatmap(self, label):
         label = torch.Tensor(label)
 
-        grid = torch.zeros((self.label_size, self.label_size, 2))       # size:(46,46,2)
+        grid = torch.zeros((self.label_size, self.label_size, 2))  # size:(46,46,2)
         grid[..., 0] = torch.Tensor(range(self.label_size)).unsqueeze(0)
         grid[..., 1] = torch.Tensor(range(self.label_size)).unsqueeze(1)
         grid = grid.unsqueeze(0)
         labels = label.unsqueeze(-2).unsqueeze(-2)
 
-        exponent = torch.sum((grid - labels)**2, dim=-1)    # size:(21,46,46)
+        exponent = torch.sum((grid - labels) ** 2, dim=-1)  # size:(21,46,46)
         heatmaps = torch.exp(-exponent / 2.0 / self.sigma / self.sigma)
         return heatmaps
 
@@ -107,9 +105,9 @@ class HandDataset_LPM(Dataset):
         limb_maps = np.zeros((20, self.label_size, self.label_size))
         x, y = np.meshgrid(np.arange(self.label_size), np.arange(self.label_size))
         count = 0
-        for part in parts:              # 20 parts
-            x1, y1 = label[part[0]]        # vector start
-            x2, y2 = label[part[1]]        # vector end
+        for part in parts:  # 20 parts
+            x1, y1 = label[part[0]]  # vector start
+            x2, y2 = label[part[1]]  # vector end
 
             cross = (x2 - x1) * (x - x1) + (y2 - y1) * (y - y1)
             length2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)
@@ -117,7 +115,7 @@ class HandDataset_LPM(Dataset):
             px = x1 + (x2 - x1) * r
             py = y1 + (y2 - y1) * r
 
-            mask1 = cross <= 0              # 46 * 46
+            mask1 = cross <= 0  # 46 * 46
             mask2 = cross >= length2
             mask3 = 1 - mask1 | mask2
 
@@ -134,11 +132,11 @@ class HandDataset_LPM(Dataset):
         # ************ Grouping Limb Maps ************
         ridegemap_group = np.zeros((groupc, self.label_size, self.label_size))
         count = 0
-        for group in modelgroup:    # group6 or group1
+        for group in modelgroup:  # group6 or group1
             for g in group:
                 group_tmp = ridegemap_group[count, :, :]
                 limb_tmp = limb_maps[g, :, :]
-                max_id = group_tmp < limb_tmp    #
+                max_id = group_tmp < limb_tmp  #
                 group_tmp[max_id] = limb_tmp[max_id]
                 ridegemap_group[count, :, :] = group_tmp
             count += 1
@@ -150,7 +148,7 @@ if __name__ == "__main__":
     data_root = '../data_sample/cmuhand'
 
     print('G6 ============>')
-    data = HandDataset_LPM(data_root=data_root, mode='train',group='G6')
+    data = HandDataset_LPM(data_root=data_root, mode='train', group='G6')
     image, label_map, lsh_map, img_name, w, h = data[0]
 
     # ***************** draw Limb map *****************

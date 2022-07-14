@@ -1,4 +1,6 @@
 import argparse
+import os
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -8,7 +10,7 @@ from model.cpm_limb import CPMHandLimb
 from PIL import Image, ImageDraw
 
 cuda = torch.cuda.is_available()
-device_id = [1]
+device_id = [0]
 torch.cuda.set_device(device_id[0])
 
 
@@ -24,7 +26,6 @@ def load_image(img_path):
 
 
 def get_image_coordinate(pred_map, ori_w, ori_h):
-
     """
     decode heatmap of one image to coordinates
     :param pred_map: Tensor  CPU     size:(1, 21, 46, 46)
@@ -46,9 +47,10 @@ def get_image_coordinate(pred_map, ori_w, ori_h):
 
 def hand_pose_estimation(model, img_path='images/sample.jpg', save_path='images/sample_out.jpg'):
     with torch.no_grad():
-        ori_im, img, ori_w, ori_h = load_image(img_path)
+        ori_im, img, ori_w, ori_h = load_image(img_path)  # ori_im: PIL.Image.Image, img: tensor, ori_w, ori_h: int
+        # img is for inference
         if cuda:
-            img = img.cuda()    # # Tensor size:(1,3,368,368)
+            img = img.cuda()  # # Tensor size:(1,3,368,368)
         _, cm_pred = model(img)
         # limb_pred (FloatTensor.cuda) size:(bz,3,C,46,46)
         # cm_pred   (FloatTensor.cuda) size:(bz,3,21,46,46)
@@ -63,6 +65,10 @@ def hand_pose_estimation(model, img_path='images/sample.jpg', save_path='images/
 
 def draw_point(points, im):
     i = 0
+    rootx = None
+    rooty = None
+    prex = None
+    prey = None
     draw = ImageDraw.Draw(im)
 
     for point in points:
@@ -77,20 +83,20 @@ def draw_point(points, im):
             prey = rooty
 
         if i > 0 and i <= 4:
-            draw.line((prex, prey, x, y), 'red')
+            draw.line((prex, prey, x, y), 'red')  # thumb
             draw.ellipse((x - 3, y - 3, x + 3, y + 3), 'red', 'white')
         if i > 4 and i <= 8:
-            draw.line((prex, prey, x, y), 'yellow')
+            draw.line((prex, prey, x, y), 'yellow')  # index
             draw.ellipse((x - 3, y - 3, x + 3, y + 3), 'yellow', 'white')
 
         if i > 8 and i <= 12:
-            draw.line((prex, prey, x, y), 'green')
+            draw.line((prex, prey, x, y), 'green')  # middle
             draw.ellipse((x - 3, y - 3, x + 3, y + 3), 'green', 'white')
         if i > 12 and i <= 16:
-            draw.line((prex, prey, x, y), 'blue')
+            draw.line((prex, prey, x, y), 'blue')  # ring
             draw.ellipse((x - 3, y - 3, x + 3, y + 3), 'blue', 'white')
         if i > 16 and i <= 20:
-            draw.line((prex, prey, x, y), 'purple')
+            draw.line((prex, prey, x, y), 'purple')  # little
             draw.ellipse((x - 3, y - 3, x + 3, y + 3), 'purple', 'white')
 
         prex = x
@@ -100,25 +106,34 @@ def draw_point(points, im):
 
 
 if __name__ == "__main__":
-    # ***********************  Parameter  ***********************
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--resume', default='weights/best_model.pth', help='trained model dir')
     parser.add_argument('--image_dir', default='images/', help='path for folder')
+    parser.add_argument('--save_dir', default='results/run_1', help='path for folder')
     args = parser.parse_args()
 
-    # ******************** build model ********************
+    ################################################## param setting
+    args.image_dir = r"images/CMUhand/imgs"
+    args.save_dir = r"results/run_1"
+    ##################################################
+
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
+
     # Limb Probabilistic Mask G1 & 6
     model = CPMHandLimb(outc=21, lshc=7, pretrained=False)
     if cuda:
         model = model.cuda()
         model = nn.DataParallel(model, device_id)
 
-    state_dict = torch.load(args.resume)
+    state_dict = torch.load(args.resume, map_location='cuda:0')
     model.load_state_dict(state_dict)
 
-    coordinate = hand_pose_estimation(model)
-    print(coordinate)
-
-
-
+    ################################################## inference
+    images_path = os.listdir(args.image_dir)
+    for image_name in images_path:
+        image_path = os.path.join(args.image_dir, image_name)
+        save_path = os.path.join(args.save_dir, image_name)
+        coordinate = hand_pose_estimation(model, image_path, save_path)
+    ##################################################

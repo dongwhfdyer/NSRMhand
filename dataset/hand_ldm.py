@@ -7,7 +7,6 @@ import json
 from PIL import Image
 import matplotlib.pyplot as plt
 
-
 parts = [
     [0, 1], [1, 2], [2, 3], [3, 4],
     [0, 5], [5, 6], [6, 7], [7, 8],
@@ -15,7 +14,6 @@ parts = [
     [0, 13], [13, 14], [14, 15], [15, 16],
     [0, 17], [17, 18], [18, 19], [19, 20]
 ]
-
 
 groups6 = [
     [1, 2, 3], [5, 6, 7], [9, 10, 11], [13, 14, 15], [17, 18, 19], [0, 4, 8, 12, 16],
@@ -81,7 +79,7 @@ class HandDataset_LDM(Dataset):
             ori_maps = lam_maps
             lam_maps = self.limb_group(ori_maps, self.group_c, self.group)  # C,46,46
             if self.group_c > 1:
-                g1_maps = self.limb_group(ori_maps, 1, groups1)         # size:(1,46,46)
+                g1_maps = self.limb_group(ori_maps, 1, groups1)  # size:(1,46,46)
                 lam_maps = np.concatenate([g1_maps, lam_maps], axis=0)
 
         lam_maps = torch.from_numpy(lam_maps).float()
@@ -91,13 +89,13 @@ class HandDataset_LDM(Dataset):
     def gen_label_heatmap(self, label):
         label = torch.Tensor(label)
 
-        grid = torch.zeros((self.label_size, self.label_size, 2))       # size:(46,46,2)
+        grid = torch.zeros((self.label_size, self.label_size, 2))  # size:(46,46,2)
         grid[..., 0] = torch.Tensor(range(self.label_size)).unsqueeze(0)
         grid[..., 1] = torch.Tensor(range(self.label_size)).unsqueeze(1)
-        grid = grid.unsqueeze(0)    # size:(1,46,46,2)
+        grid = grid.unsqueeze(0)  # size:(1,46,46,2)
         labels = label.unsqueeze(-2).unsqueeze(-2)
 
-        exponent = torch.sum((grid - labels)**2, dim=-1)    # size:(21,46,46)
+        exponent = torch.sum((grid - labels) ** 2, dim=-1)  # size:(21,46,46)
         heatmaps = torch.exp(-exponent / 2.0 / self.sigma / self.sigma)
         return heatmaps
 
@@ -113,15 +111,15 @@ class HandDataset_LDM(Dataset):
         x, y = np.meshgrid(np.arange(self.label_size), np.arange(self.label_size))
 
         count = 0
-        for part in parts:              # 20 parts
-            x1, y1 = label[part[0]]        # vector start
-            x2, y2 = label[part[1]]        # vector end
+        for part in parts:  # 20 parts
+            x1, y1 = label[part[0]]  # vector start
+            x2, y2 = label[part[1]]  # vector end
 
             length = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
             # unit vector
-            v1 = (x2 - x1)/(length + 1e-8)  # in case the length is zero, so add 1e-8
-            v2 = (y2 - y1)/(length + 1e-8)
+            v1 = (x2 - x1) / (length + 1e-8)  # in case the length is zero, so add 1e-8
+            v2 = (y2 - y1) / (length + 1e-8)
 
             dist_along_part = v1 * (x - x1) + v2 * (y - y1)
             dist_per_part = np.abs(v2 * (x - x1) + (-v1) * (y - y1))
@@ -168,7 +166,3 @@ if __name__ == "__main__":
     for i in range(lab.shape[0]):
         group_out_labels[:, lab.shape[1] * i:lab.shape[1] * i + lab.shape[1]] = lab[i, :, :]
     plt.imsave('ldm/ldm_g1.jpg', group_out_labels)
-
-
-
-
